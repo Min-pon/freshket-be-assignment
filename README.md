@@ -52,6 +52,27 @@ try {
 }
 ```
 
+### Price breakdown
+
+`calculateBreakdown` takes the same arguments and returns how the price was reached, like a receipt. `calculate` returns its `total`.
+
+```ts
+calculator.calculateBreakdown({ ORANGE: 5 }, { hasMemberCard: true });
+// {
+//   lines: [{ item: 'ORANGE', quantity: 5, unitPrice: 120, amount: 600 }],
+//   subtotal: 600,
+//   discounts: [
+//     { name: 'Pair discount 5% (ORANGE, PINK, GREEN)', amount: 24 },
+//     { name: 'Member discount 10%', amount: 57.6 },
+//   ],
+//   total: 518.4,
+// }
+```
+
+- `lines` follow menu order and leave out sets with a quantity of 0.
+- `discounts` are in the order they were applied, and leave out rules that took nothing off.
+- All amounts are in THB.
+
 ## Pricing rules
 
 | Set    | THB / set | Pair discount |
@@ -170,12 +191,13 @@ class SpendOverRule implements DiscountRule {
 
 ## Tests
 
-86 unit tests with [Vitest](https://vitest.dev), 100% statement, branch, function and line coverage.
+96 unit tests with [Vitest](https://vitest.dev), 100% statement, branch, function and line coverage.
 
 | File | What it covers |
 | --- | --- |
 | `tests/scenarios.test.ts` | End-to-end pricing with the real menu and promotions: every example from the brief, plus edge cases |
 | `tests/calculator.test.ts` | `Calculator` behaviour: rule order, custom rules, the zero floor, faulty rules, input validation |
+| `tests/breakdown.test.ts` | `calculateBreakdown`: lines, applied discounts, totals that add up and match `calculate` |
 | `tests/rules/*.test.ts` | Each discount rule on its own |
 | `tests/money.test.ts` | Satang/THB conversion, percentage rounding |
 | `tests/menu.test.ts` | Menu prices and `isMenuItem` |
@@ -202,7 +224,7 @@ Scenarios checked end to end:
 
 ```
 src/
-  calculator.ts              Calculator class
+  calculator.ts              Calculator class: calculate and calculateBreakdown
   promotions.ts              The store's current discount rules, in order
   rules/
     pair-discount.rule.ts    Percent off each complete pair of eligible sets
@@ -211,7 +233,7 @@ src/
   money.ts                   Satang/THB conversion and percentages
   validation.ts              Runtime checks for the order and member flag
   errors.ts                  InvalidOrderError
-  types.ts                   MenuItem, Order, Satang, PricingContext, DiscountRule
+  types.ts                   MenuItem, Order, Satang, DiscountRule, PriceBreakdown, ...
   index.ts                   Public exports
 tests/                       Vitest unit tests (see above)
 ```

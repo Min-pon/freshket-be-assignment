@@ -25,3 +25,26 @@ export interface DiscountRule {
   /** Returns the discount to subtract from `currentTotal`, never negative. */
   discount(context: PricingContext, currentTotal: Satang): Satang;
 }
+
+/** One row of the bill. Amounts in THB. */
+export interface LineItem {
+  readonly item: MenuItem;
+  readonly quantity: number;
+  readonly unitPrice: number;
+  readonly amount: number;
+}
+
+/** A discount that took money off the bill. Amount in THB. */
+export interface AppliedDiscount {
+  readonly name: string;
+  readonly amount: number;
+}
+
+/** How the price was reached, like a receipt. Amounts in THB. */
+export interface PriceBreakdown {
+  readonly lines: readonly LineItem[];
+  readonly subtotal: number;
+  /** Discounts in the order they were applied; rules that took nothing off are left out. */
+  readonly discounts: readonly AppliedDiscount[];
+  readonly total: number;
+}
