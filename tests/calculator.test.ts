@@ -10,6 +10,23 @@ describe('Calculator', () => {
     expect(calculator.calculate({ RED: 1, GREEN: 1 })).toBe(90);
   });
 
+  it('treats null options from plain JavaScript as no options', () => {
+    expect(calculator.calculate({ RED: 1 }, null as unknown as undefined)).toBe(50);
+  });
+
+  it('rejects an order too large to price exactly', () => {
+    expect(() => calculator.calculate({ ORANGE: 1e13 }, { hasMemberCard: true })).toThrow(
+      new InvalidOrderError('Order is too large to price exactly'),
+    );
+  });
+
+  it('prices orders right up to the limit', () => {
+    // Limit: floor(MAX_SAFE_INTEGER / 100) = 90_071_992_547_409 satang.
+    // 7_505_999_378 Orange = 90_071_992_536_000 satang, minus 5% on 3_752_999_689 pairs.
+    expect(calculator.calculate({ ORANGE: 7_505_999_378 })).toBe(855_683_929_092);
+    expect(() => calculator.calculate({ ORANGE: 7_505_999_379 })).toThrow(InvalidOrderError);
+  });
+
   it('treats a missing member flag as no member card', () => {
     expect(calculator.calculate({ RED: 1 })).toBe(calculator.calculate({ RED: 1 }, { hasMemberCard: false }));
   });

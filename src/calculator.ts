@@ -1,3 +1,4 @@
+import { InvalidOrderError } from './errors.js';
 import { MENU, MENU_ITEMS } from './menu.js';
 import { toBaht, toSatang } from './money.js';
 import { STORE_DISCOUNT_RULES } from './promotions.js';
@@ -11,6 +12,12 @@ import type {
   PricingContext,
   Satang,
 } from './types.js';
+
+/**
+ * Largest subtotal (in satang) that percentage discounts can still work on
+ * exactly: `percentOf` multiplies by up to 100 before dividing.
+ */
+const MAX_EXACT_SUBTOTAL: Satang = Math.floor(Number.MAX_SAFE_INTEGER / 100);
 
 export interface CalculateOptions {
   readonly hasMemberCard?: boolean;
@@ -31,12 +38,17 @@ export class Calculator {
    * Same as `calculate`, but returns each line, subtotal and discount
    * that led to the total.
    */
-  calculateBreakdown(input: Order, { hasMemberCard = false }: CalculateOptions = {}): PriceBreakdown {
+  calculateBreakdown(input: Order, options: CalculateOptions = {}): PriceBreakdown {
+    // `?? {}` also covers plain JavaScript callers passing null.
+    const { hasMemberCard = false } = options ?? {};
     const order = parseOrder(input);
     assertValidMemberFlag(hasMemberCard);
 
     const lines = this.lineItems(order);
     const subtotal = lines.reduce((total, line) => total + line.amount, 0);
+    if (subtotal > MAX_EXACT_SUBTOTAL) {
+      throw new InvalidOrderError('Order is too large to price exactly');
+    }
 
     const context: PricingContext = { order, hasMemberCard };
     const discounts: AppliedDiscount[] = [];

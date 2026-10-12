@@ -14,9 +14,19 @@ describe('MENU', () => {
     });
   });
 
+  it('cannot be changed at runtime', () => {
+    const menu = MENU as Record<string, number>;
+    expect(Object.isFrozen(MENU)).toBe(true);
+    expect(() => {
+      menu.RED = 0;
+    }).toThrow(TypeError);
+    expect(MENU.RED).toBe(50);
+  });
+
   it('lists every item in MENU_ITEMS', () => {
     expect(MENU_ITEMS).toHaveLength(7);
     expect(MENU_ITEMS).toEqual(Object.keys(MENU));
+    expect(Object.isFrozen(MENU_ITEMS)).toBe(true);
   });
 });
 
