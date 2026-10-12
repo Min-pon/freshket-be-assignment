@@ -93,6 +93,15 @@ calculator.calculateBreakdown({ ORANGE: 5 }, { hasMemberCard: true });
 The brief leaves some points open. These are the choices this implementation makes:
 
 1. **Discount order.** Pair discounts are applied first, then the member discount takes 10% off what is left. "10% on Total" is read as the total after per-item discounts.
+
+   Another reading is that both discounts come off the original subtotal and are added up. For 5 Orange sets with a member card:
+
+   | Reading | Calculation | Price |
+   | --- | --- | ---: |
+   | Stacked (this implementation) | 600 − 24 = 576, then 576 − 57.6 | **518.4** |
+   | Both from the subtotal | 600 − 24 − 60 | **516** |
+
+   I chose stacking because a member discount usually applies to the bill after item promotions. Switching to the other reading means swapping the two rules in `src/promotions.ts`, with no other code change. The member rule then takes 10% of the full subtotal, and the pair rule always works from menu prices, so the result is 516.
 2. **Pairs are of the same set.** One Orange and one Pink do not make a pair; the brief's example only talks about Orange with Orange.
 3. **Number of pairs** per set is `floor(quantity / 2)`.
 4. **Input is quantities per set** (`{ ORANGE: 5 }`) rather than a list of names. It is easier to validate and cannot contain typos that pass silently.
