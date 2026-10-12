@@ -12,12 +12,14 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "demo": "tsx examples/demo.ts"
   },
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^20.19.43",
     "@vitest/coverage-v8": "^4.1.11",
+    "tsx": "4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
   }
