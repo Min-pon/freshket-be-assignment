@@ -202,11 +202,11 @@ class SpendOverRule implements DiscountRule {
 
 ## Tests
 
-105 unit tests with [Vitest](https://vitest.dev), 100% statement, branch, function and line coverage.
+110 unit tests with [Vitest](https://vitest.dev), 100% statement, branch, function and line coverage.
 
 | File | What it covers |
 | --- | --- |
-| `tests/scenarios.test.ts` | End-to-end pricing with the real menu and promotions: every example from the brief, plus edge cases |
+| `tests/scenarios.test.ts` | End-to-end pricing with the real menu and promotions: every example from the brief, edge cases, and the other reading of "10% on Total" (516) |
 | `tests/calculator.test.ts` | `Calculator` behaviour: rule order, custom rules, the zero floor, faulty rules, input validation including prototype tricks |
 | `tests/breakdown.test.ts` | `calculateBreakdown`: lines, applied discounts, totals that add up and match `calculate` |
 | `tests/rules/*.test.ts` | Each discount rule on its own |
@@ -221,6 +221,7 @@ Scenarios checked end to end:
 | 2 | Red, Green | yes | 81 | 90 × 0.9 |
 | 3 | 5 Orange | no | 576 | 600 − 2 pairs × 240 × 5% |
 | 4 | 5 Orange | yes | 518.4 | 576 × 0.9 |
+| 4b | 3 Orange | yes | 313.2 | (360 − 12) × 0.9, one pair plus a leftover |
 | 5 | 1 Green | no | 40 | No pair |
 | 6 | 2 Pink, 3 Green | no | 268 | (160 − 8) + (120 − 4) |
 | 6b | 2 Pink, 3 Green | yes | 241.2 | 268 × 0.9, the floating point case |

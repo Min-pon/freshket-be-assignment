@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PairDiscountRule } from '../../src/rules/pair-discount.rule.js';
-import type { Order } from '../../src/types.js';
+import type { MenuItem, Order } from '../../src/types.js';
 
 const rule = new PairDiscountRule({ items: ['ORANGE', 'PINK', 'GREEN'], percent: 5 });
 
@@ -52,6 +52,13 @@ describe('PairDiscountRule', () => {
 
   it('rejects a percent outside 0-100', () => {
     expect(() => new PairDiscountRule({ items: ['ORANGE'], percent: 150 })).toThrow(RangeError);
+  });
+
+  it.each(['BLACK', 'orange', 'toString'])('rejects %o as an item when built', (item) => {
+    const items = [item] as unknown as MenuItem[];
+    expect(() => new PairDiscountRule({ items, percent: 5 })).toThrow(
+      `Unknown menu item in pair discount: ${item}`,
+    );
   });
 
   it('describes itself', () => {

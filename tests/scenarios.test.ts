@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Calculator } from '../src/calculator.js';
 import { InvalidOrderError } from '../src/errors.js';
+import { STORE_DISCOUNT_RULES } from '../src/promotions.js';
 import type { Order } from '../src/types.js';
 
 /** End-to-end scenarios with the store's real menu and promotions. */
@@ -18,6 +19,7 @@ const scenarios: readonly Scenario[] = [
   { name: '#2 Red + Green with member card: 90 × 0.9', order: { RED: 1, GREEN: 1 }, hasMemberCard: true, expected: 81 },
   { name: '#3 5 Orange: 600 − 2 pairs × 240 × 5%', order: { ORANGE: 5 }, hasMemberCard: false, expected: 576 },
   { name: '#4 5 Orange with member card: 576 × 0.9', order: { ORANGE: 5 }, hasMemberCard: true, expected: 518.4 },
+  { name: '#4b 3 Orange with member card: (360 − 12) × 0.9', order: { ORANGE: 3 }, hasMemberCard: true, expected: 313.2 },
   { name: '#5 single Green: no pair', order: { GREEN: 1 }, hasMemberCard: false, expected: 40 },
   { name: '#6 2 Pink + 3 Green: (160 − 8) + (120 − 4)', order: { PINK: 2, GREEN: 3 }, hasMemberCard: false, expected: 268 },
   { name: '#6b 2 Pink + 3 Green with member card: 268 × 0.9', order: { PINK: 2, GREEN: 3 }, hasMemberCard: true, expected: 241.2 },
@@ -56,4 +58,11 @@ describe('Calculator scenarios', () => {
       expect(() => calculator.calculate(order as Order)).toThrow(InvalidOrderError);
     });
   }
+});
+
+describe('the other reading of "10% on Total" (README, assumption 1)', () => {
+  it('both discounts from the subtotal: swapping the two store rules gives 600 − 24 − 60 = 516', () => {
+    const memberFirst = new Calculator([...STORE_DISCOUNT_RULES].reverse());
+    expect(memberFirst.calculate({ ORANGE: 5 }, { hasMemberCard: true })).toBe(516);
+  });
 });

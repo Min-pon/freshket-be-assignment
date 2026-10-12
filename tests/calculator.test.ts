@@ -14,9 +14,9 @@ describe('Calculator', () => {
     expect(calculator.calculate({ RED: 1 })).toBe(calculator.calculate({ RED: 1 }, { hasMemberCard: false }));
   });
 
-  it('does not change the order passed in', () => {
-    const order: Order = { ORANGE: 5 };
-    calculator.calculate(order, { hasMemberCard: true });
+  it('does not change the order passed in, so a frozen order works', () => {
+    const order: Order = Object.freeze({ ORANGE: 5 });
+    expect(calculator.calculate(order, { hasMemberCard: true })).toBe(518.4);
     expect(order).toEqual({ ORANGE: 5 });
   });
 
@@ -56,7 +56,14 @@ describe('Calculator', () => {
     const calculateUnchecked = (order: unknown, hasMemberCard?: unknown) =>
       calculator.calculate(order as Order, { hasMemberCard: hasMemberCard as boolean });
 
-    it.each([null, undefined, 'RED', 5, ['RED']])('rejects %j as an order', (order) => {
+    // Labelled tuples: it.each would spread a bare ['RED'] into arguments instead of passing the array.
+    it.each([
+      ['null', null],
+      ['undefined', undefined],
+      ['a string', 'RED'],
+      ['a number', 5],
+      ['an array', ['RED']],
+    ])('rejects %s as an order', (_label, order) => {
       expect(() => calculateUnchecked(order)).toThrow(InvalidOrderError);
     });
 
@@ -109,7 +116,7 @@ describe('Calculator', () => {
     });
 
     it.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, '2', null])(
-      'rejects quantity %j',
+      'rejects quantity %o',
       (quantity) => {
         expect(() => calculateUnchecked({ ORANGE: quantity })).toThrow(InvalidOrderError);
       },
@@ -119,7 +126,7 @@ describe('Calculator', () => {
       expect(calculator.calculate({ ORANGE: 0, RED: 1 })).toBe(50);
     });
 
-    it.each(['yes', 1, null])('rejects member flag %j', (flag) => {
+    it.each(['yes', 1, null])('rejects member flag %o', (flag) => {
       expect(() => calculateUnchecked({ RED: 1 }, flag)).toThrow(InvalidOrderError);
     });
   });

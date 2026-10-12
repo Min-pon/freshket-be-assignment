@@ -1,4 +1,4 @@
-import { MENU } from '../menu.js';
+import { MENU, isMenuItem } from '../menu.js';
 import { assertValidPercent, percentOf, toSatang } from '../money.js';
 import type { DiscountRule, MenuItem, PricingContext, Satang } from '../types.js';
 
@@ -21,6 +21,11 @@ export class PairDiscountRule implements DiscountRule {
 
   constructor({ items, percent }: PairDiscountOptions) {
     assertValidPercent(percent);
+    for (const item of items) {
+      if (!isMenuItem(item)) {
+        throw new RangeError(`Unknown menu item in pair discount: ${String(item)}`);
+      }
+    }
     this.items = new Set(items);
     this.percent = percent;
     this.name = `Pair discount ${percent}% (${[...this.items].join(', ')})`;
