@@ -16,10 +16,10 @@ A TypeScript `Calculator` class that prices an order from a food store with 7 se
 
 ## Quick start
 
-Requires Node.js 20.19 or later (Node.js 24 LTS recommended).
+Requires Node.js 20.19+, 22 or 24+ (Node.js 24 LTS recommended), the versions Vitest supports.
 
 ```bash
-npm install
+npm ci
 npm run demo        # print receipts for a few sample orders
 npm test            # run all unit tests
 npm run coverage    # tests with a coverage report
@@ -144,10 +144,10 @@ interface DiscountRule {
 The store's current promotions are defined in one place, `src/promotions.ts`, and used by default:
 
 ```ts
-export const STORE_DISCOUNT_RULES: readonly DiscountRule[] = [
+export const STORE_DISCOUNT_RULES: readonly DiscountRule[] = Object.freeze([
   new PairDiscountRule({ items: ['ORANGE', 'PINK', 'GREEN'], percent: 5 }),
   new MemberDiscountRule({ percent: 10 }),
-];
+]);
 ```
 
 ### Money in satang
@@ -195,6 +195,8 @@ The calculator also guards against faulty rules: a rule that returns a negative 
 **Use different promotions** without touching `Calculator`, by passing rules to the constructor:
 
 ```ts
+import { Calculator, MemberDiscountRule, PairDiscountRule } from './src/index.js';
+
 const calculator = new Calculator([
   new PairDiscountRule({ items: ['ORANGE'], percent: 5 }),
   new MemberDiscountRule({ percent: 20 }),
@@ -219,7 +221,7 @@ class SpendOverRule implements DiscountRule {
 
 ## Tests
 
-122 unit tests with [Vitest](https://vitest.dev), 100% statement, branch, function and line coverage.
+125 unit tests with [Vitest](https://vitest.dev), 100% statement, branch, function and line coverage.
 
 | File | What it covers |
 | --- | --- |

@@ -5,7 +5,7 @@
   "type": "module",
   "private": true,
   "engines": {
-    "node": ">=20.19"
+    "node": "^20.19 || ^22 || >=24"
   },
   "exports": {
     ".": {

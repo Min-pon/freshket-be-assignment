@@ -24,7 +24,15 @@ export interface CalculateOptions {
 }
 
 export class Calculator {
-  constructor(private readonly rules: readonly DiscountRule[] = STORE_DISCOUNT_RULES) {}
+  private readonly rules: readonly DiscountRule[];
+
+  /** Copies `rules`, so changing the array afterwards does not change prices. */
+  constructor(rules: readonly DiscountRule[] = STORE_DISCOUNT_RULES) {
+    if (!Array.isArray(rules)) {
+      throw new TypeError('rules must be an array of discount rules');
+    }
+    this.rules = [...rules];
+  }
 
   /**
    * Returns the price to pay in THB, e.g. `calculate({ RED: 1, GREEN: 1 })` → 90.

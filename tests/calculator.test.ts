@@ -42,6 +42,22 @@ describe('Calculator', () => {
       expect(new Calculator([]).calculate({ ORANGE: 2 }, { hasMemberCard: true })).toBe(240);
     });
 
+    it('keeps its own copy of the rules', () => {
+      const rules: DiscountRule[] = [];
+      const ownRules = new Calculator(rules);
+      rules.push({ name: 'half off', discount: (_context, currentTotal) => currentTotal / 2 });
+      expect(ownRules.calculate({ RED: 2 })).toBe(100);
+    });
+
+    it.each([
+      ['null', null],
+      ['a single rule', { name: 'x', discount: () => 0 }],
+    ])('rejects %s instead of a rules array', (_label, rules) => {
+      expect(() => new Calculator(rules as unknown as DiscountRule[])).toThrow(
+        new TypeError('rules must be an array of discount rules'),
+      );
+    });
+
     it('runs rules in order, passing the running total', () => {
       const seen: number[] = [];
       const recordAndTake = (amount: number): DiscountRule => ({
