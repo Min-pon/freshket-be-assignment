@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Calculator } from '../src/calculator.js';
+import { Calculator, type CalculateOptions } from '../src/calculator.js';
 import { InvalidOrderError } from '../src/errors.js';
 import type { DiscountRule, Order } from '../src/types.js';
 
@@ -145,6 +145,32 @@ describe('Calculator', () => {
 
     it.each(['yes', 1, null])('rejects member flag %o', (flag) => {
       expect(() => calculateUnchecked({ RED: 1 }, flag)).toThrow(InvalidOrderError);
+    });
+
+    describe('options', () => {
+      const calculateWithOptions = (options: unknown) =>
+        calculator.calculate({ ORANGE: 5 }, options as CalculateOptions);
+
+      it.each([
+        ['true', true],
+        ['a string', 'yes'],
+        ['a number', 1],
+        ['an array', [true]],
+      ])('rejects %s instead of an options object', (_label, options) => {
+        expect(() => calculateWithOptions(options)).toThrow(
+          new InvalidOrderError('Options must be an object, e.g. { hasMemberCard: true }'),
+        );
+      });
+
+      it('rejects a misspelt option rather than dropping the member discount', () => {
+        expect(() => calculateWithOptions({ hasMembercard: true })).toThrow(
+          new InvalidOrderError('Unknown option: hasMembercard'),
+        );
+      });
+
+      it('treats empty options as no member card', () => {
+        expect(calculateWithOptions({})).toBe(576);
+      });
     });
   });
 });

@@ -53,11 +53,13 @@ calculator.calculate({ ORANGE: 5 }, { hasMemberCard: true });  // 518.4
 
 - **Input:** an object of quantities per menu item. Items not ordered can be left out.
 - **Output:** the price to pay in THB, as a `number`.
-- **Errors:** an unknown item, a quantity that is not a whole number of 0 or more, or a member flag that is not a boolean throws `InvalidOrderError`.
+- **Errors:** an unknown item, a quantity that is not a whole number of 0 or more, or invalid options (not an object, an unknown key, a member flag that is not a boolean) throws `InvalidOrderError`.
 
 ```ts
 try {
-  calculator.calculate({ BLACK: 1 });
+  // An order from plain JavaScript or a JSON request body. TypeScript
+  // already rejects { BLACK: 1 } at compile time.
+  calculator.calculate(JSON.parse('{ "BLACK": 1 }'));
 } catch (error) {
   if (error instanceof InvalidOrderError) {
     console.log(error.message); // "Unknown menu item: BLACK"
@@ -171,12 +173,12 @@ The types already describe a valid order, but callers using plain JavaScript or 
 - the order is a plain object: an object literal, parsed JSON or `Object.create(null)`. `null`, arrays, `Map`s, class instances and objects with a custom prototype are rejected;
 - every key is a menu item (`Object.hasOwn`, so keys such as `toString` are rejected);
 - every quantity passes `Number.isSafeInteger` and is 0 or more. This rejects fractions, `NaN`, `Infinity` and strings such as `'2'`;
-- `hasMemberCard` is a boolean (options may be left out or `null`);
+- options are left out, `null`, or a plain object whose only key is `hasMemberCard`, a boolean. A misspelt key such as `hasMembercard` throws rather than silently dropping the member discount;
 - the subtotal stays small enough for percentages to be exact in whole satang (about 900 billion THB). Larger orders throw `InvalidOrderError` rather than a rounded price.
 
 Validation returns a clean copy of the order holding only its own, checked keys, and the subtotal and every rule are computed from that copy. A quantity hidden in the prototype (for example `{ __proto__: { RED: 5 } }`) can therefore never be priced without being checked.
 
-`MENU`, `MENU_ITEMS` and `STORE_DISCOUNT_RULES` are frozen with `Object.freeze`, because `as const` and `readonly` only protect them at compile time. Without it, `MENU.RED = 0` from any caller would change the price for every calculator.
+`MENU`, `MENU_ITEMS` and the `STORE_DISCOUNT_RULES` list are frozen with `Object.freeze`, because `as const` and `readonly` only protect them at compile time. This stops `MENU.RED = 0` from changing prices for every calculator, and stops rules being added to or removed from the default list. The freeze is shallow: the rule objects in the list are not locked. To use different promotions, pass your own rules to the constructor rather than editing the defaults.
 
 The calculator also guards against faulty rules: a rule that returns a negative or fractional discount throws an `Error`, since that is a bug in the rule rather than bad input. A discount larger than the remaining total is capped, so the price never goes below 0.
 
@@ -217,7 +219,7 @@ class SpendOverRule implements DiscountRule {
 
 ## Tests
 
-116 unit tests with [Vitest](https://vitest.dev), 100% statement, branch, function and line coverage.
+122 unit tests with [Vitest](https://vitest.dev), 100% statement, branch, function and line coverage.
 
 | File | What it covers |
 | --- | --- |
@@ -227,7 +229,7 @@ class SpendOverRule implements DiscountRule {
 | `tests/rules/*.test.ts` | Each discount rule on its own |
 | `tests/money.test.ts` | Satang/THB conversion, percentage rounding |
 | `tests/menu.test.ts` | Menu prices, `isMenuItem`, and that the menu cannot be changed at runtime |
-| `tests/promotions.test.ts` | The store's rules and their order, frozen |
+| `tests/promotions.test.ts` | The store's rules, their order, and that the list cannot be changed |
 
 Scenarios checked end to end:
 

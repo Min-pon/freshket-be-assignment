@@ -2,7 +2,7 @@ import { InvalidOrderError } from './errors.js';
 import { MENU, MENU_ITEMS } from './menu.js';
 import { toBaht, toSatang } from './money.js';
 import { STORE_DISCOUNT_RULES } from './promotions.js';
-import { assertValidMemberFlag, parseOrder } from './validation.js';
+import { parseOptions, parseOrder } from './validation.js';
 import type {
   AppliedDiscount,
   DiscountRule,
@@ -28,9 +28,9 @@ export class Calculator {
 
   /**
    * Returns the price to pay in THB, e.g. `calculate({ RED: 1, GREEN: 1 })` → 90.
-   * Throws `InvalidOrderError` for unknown items or invalid quantities.
+   * Throws `InvalidOrderError` for unknown items, invalid quantities or invalid options.
    */
-  calculate(order: Order, options: CalculateOptions = {}): number {
+  calculate(order: Order, options?: CalculateOptions): number {
     return this.calculateBreakdown(order, options).total;
   }
 
@@ -38,11 +38,9 @@ export class Calculator {
    * Same as `calculate`, but returns each line, subtotal and discount
    * that led to the total.
    */
-  calculateBreakdown(input: Order, options: CalculateOptions = {}): PriceBreakdown {
-    // `?? {}` also covers plain JavaScript callers passing null.
-    const { hasMemberCard = false } = options ?? {};
+  calculateBreakdown(input: Order, options?: CalculateOptions): PriceBreakdown {
     const order = parseOrder(input);
-    assertValidMemberFlag(hasMemberCard);
+    const { hasMemberCard } = parseOptions(options);
 
     const lines = this.lineItems(order);
     const subtotal = lines.reduce((total, line) => total + line.amount, 0);

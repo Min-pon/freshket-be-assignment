@@ -10,7 +10,7 @@ describe('STORE_DISCOUNT_RULES', () => {
     ]);
   });
 
-  it('cannot be changed at runtime', () => {
+  it('cannot have rules added, removed or reordered at runtime', () => {
     const rules = STORE_DISCOUNT_RULES as DiscountRule[];
     expect(Object.isFrozen(STORE_DISCOUNT_RULES)).toBe(true);
     expect(() => rules.push({ name: 'free', discount: () => 0 })).toThrow(TypeError);
