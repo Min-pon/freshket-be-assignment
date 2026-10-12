@@ -11,6 +11,7 @@ A TypeScript `Calculator` class that prices an order from a food store with 7 se
 - [Design](#design)
 - [Extending](#extending)
 - [Tests](#tests)
+- [Limitations and next steps](#limitations-and-next-steps)
 - [Project structure](#project-structure)
 
 ## Quick start
@@ -19,10 +20,22 @@ Requires Node.js 20.19 or later (Node.js 24 LTS recommended).
 
 ```bash
 npm install
+npm run demo        # print receipts for a few sample orders
 npm test            # run all unit tests
 npm run coverage    # tests with a coverage report
 npm run typecheck   # TypeScript strict type check
 npm run build       # compile src/ to dist/
+```
+
+`npm run demo` runs `examples/demo.ts`, for example:
+
+```
+5 Orange with a member card
+  ORANGE × 5                                  600.00
+  Subtotal                                    600.00
+  Pair discount 5% (ORANGE, PINK, GREEN)      -24.00
+  Member discount 10%                         -57.60
+  Total (THB)                                 518.40
 ```
 
 ## Usage
@@ -158,9 +171,12 @@ The types already describe a valid order, but callers using plain JavaScript or 
 - the order is a plain object: an object literal, parsed JSON or `Object.create(null)`. `null`, arrays, `Map`s, class instances and objects with a custom prototype are rejected;
 - every key is a menu item (`Object.hasOwn`, so keys such as `toString` are rejected);
 - every quantity passes `Number.isSafeInteger` and is 0 or more. This rejects fractions, `NaN`, `Infinity` and strings such as `'2'`;
-- `hasMemberCard` is a boolean.
+- `hasMemberCard` is a boolean (options may be left out or `null`);
+- the subtotal stays small enough for percentages to be exact in whole satang (about 900 billion THB). Larger orders throw `InvalidOrderError` rather than a rounded price.
 
 Validation returns a clean copy of the order holding only its own, checked keys, and the subtotal and every rule are computed from that copy. A quantity hidden in the prototype (for example `{ __proto__: { RED: 5 } }`) can therefore never be priced without being checked.
+
+`MENU`, `MENU_ITEMS` and `STORE_DISCOUNT_RULES` are frozen with `Object.freeze`, because `as const` and `readonly` only protect them at compile time. Without it, `MENU.RED = 0` from any caller would change the price for every calculator.
 
 The calculator also guards against faulty rules: a rule that returns a negative or fractional discount throws an `Error`, since that is a bug in the rule rather than bad input. A discount larger than the remaining total is capped, so the price never goes below 0.
 
@@ -188,8 +204,7 @@ calculator.calculate({ ORANGE: 5 }, { hasMemberCard: true }); // 460.8
 **Add a new kind of promotion** by implementing `DiscountRule`. For example, a fixed amount off orders over a threshold:
 
 ```ts
-import { toSatang } from './src/money.js';
-import type { DiscountRule, PricingContext, Satang } from './src/index.js';
+import { toSatang, type DiscountRule, type PricingContext, type Satang } from './src/index.js';
 
 class SpendOverRule implements DiscountRule {
   readonly name = 'Spend over 500 THB, get 50 THB off';
@@ -202,7 +217,7 @@ class SpendOverRule implements DiscountRule {
 
 ## Tests
 
-110 unit tests with [Vitest](https://vitest.dev), 100% statement, branch, function and line coverage.
+116 unit tests with [Vitest](https://vitest.dev), 100% statement, branch, function and line coverage.
 
 | File | What it covers |
 | --- | --- |
@@ -211,7 +226,8 @@ class SpendOverRule implements DiscountRule {
 | `tests/breakdown.test.ts` | `calculateBreakdown`: lines, applied discounts, totals that add up and match `calculate` |
 | `tests/rules/*.test.ts` | Each discount rule on its own |
 | `tests/money.test.ts` | Satang/THB conversion, percentage rounding |
-| `tests/menu.test.ts` | Menu prices and `isMenuItem` |
+| `tests/menu.test.ts` | Menu prices, `isMenuItem`, and that the menu cannot be changed at runtime |
+| `tests/promotions.test.ts` | The store's rules and their order, frozen |
 
 Scenarios checked end to end:
 
@@ -232,6 +248,12 @@ Scenarios checked end to end:
 | 11 | 1 of every set | yes | 414 | 460 × 0.9 |
 | 12 | 2 of every set | yes | 806.4 | (920 − 12 − 8 − 4) × 0.9 |
 
+## Limitations and next steps
+
+- **Prices are read in two places.** `Calculator` prices each line from `MENU`, and `PairDiscountRule` looks up `MENU` again for its pairs. Both read the same frozen object, so they cannot disagree today, but the menu cannot be swapped (for example a different price list per branch) without changing the rule. The next step would be to put the priced lines in `PricingContext`, so rules use exactly the prices the subtotal used and never need `MENU`.
+- **Rules only take money off.** Surcharges, service charge or VAT would need a separate kind of rule.
+- **Discounts are rounded per rule**, half up, in whole satang. With the current prices nothing is ever rounded; a real store would confirm its rounding policy.
+
 ## Project structure
 
 ```
@@ -247,5 +269,7 @@ src/
   errors.ts                  InvalidOrderError
   types.ts                   MenuItem, Order, Satang, DiscountRule, PriceBreakdown, ...
   index.ts                   Public exports
+examples/
+  demo.ts                    Sample receipts (npm run demo)
 tests/                       Vitest unit tests (see above)
 ```

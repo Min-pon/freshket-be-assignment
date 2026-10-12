@@ -7,6 +7,12 @@
   "engines": {
     "node": ">=20.19"
   },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
@@ -15,12 +21,11 @@
     "coverage": "vitest run --coverage",
     "demo": "tsx examples/demo.ts"
   },
-  "license": "ISC",
   "devDependencies": {
-    "@types/node": "^20.19.43",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@types/node": "20.19.43",
+    "@vitest/coverage-v8": "4.1.11",
     "tsx": "4.23.15",
-    "typescript": "^7.0.2",
-    "vitest": "^4.1.11"
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
   }
 }
