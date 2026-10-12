@@ -146,10 +146,12 @@ This is the same approach payment systems use: store money in the currency's sma
 
 The types already describe a valid order, but callers using plain JavaScript or parsed JSON bypass them, so `Calculator` also checks its input at runtime:
 
-- the order is an object (not `null` or an array);
+- the order is a plain object: an object literal, parsed JSON or `Object.create(null)`. `null`, arrays, `Map`s, class instances and objects with a custom prototype are rejected;
 - every key is a menu item (`Object.hasOwn`, so keys such as `toString` are rejected);
 - every quantity passes `Number.isSafeInteger` and is 0 or more. This rejects fractions, `NaN`, `Infinity` and strings such as `'2'`;
 - `hasMemberCard` is a boolean.
+
+Validation returns a clean copy of the order holding only its own, checked keys, and the subtotal and every rule are computed from that copy. A quantity hidden in the prototype (for example `{ __proto__: { RED: 5 } }`) can therefore never be priced without being checked.
 
 The calculator also guards against faulty rules: a rule that returns a negative or fractional discount throws an `Error`, since that is a bug in the rule rather than bad input. A discount larger than the remaining total is capped, so the price never goes below 0.
 
@@ -191,12 +193,12 @@ class SpendOverRule implements DiscountRule {
 
 ## Tests
 
-96 unit tests with [Vitest](https://vitest.dev), 100% statement, branch, function and line coverage.
+105 unit tests with [Vitest](https://vitest.dev), 100% statement, branch, function and line coverage.
 
 | File | What it covers |
 | --- | --- |
 | `tests/scenarios.test.ts` | End-to-end pricing with the real menu and promotions: every example from the brief, plus edge cases |
-| `tests/calculator.test.ts` | `Calculator` behaviour: rule order, custom rules, the zero floor, faulty rules, input validation |
+| `tests/calculator.test.ts` | `Calculator` behaviour: rule order, custom rules, the zero floor, faulty rules, input validation including prototype tricks |
 | `tests/breakdown.test.ts` | `calculateBreakdown`: lines, applied discounts, totals that add up and match `calculate` |
 | `tests/rules/*.test.ts` | Each discount rule on its own |
 | `tests/money.test.ts` | Satang/THB conversion, percentage rounding |
@@ -231,7 +233,7 @@ src/
     member-discount.rule.ts  Percent off the total for member card holders
   menu.ts                    Price list and isMenuItem
   money.ts                   Satang/THB conversion and percentages
-  validation.ts              Runtime checks for the order and member flag
+  validation.ts              parseOrder (checked copy of the order) and member flag check
   errors.ts                  InvalidOrderError
   types.ts                   MenuItem, Order, Satang, DiscountRule, PriceBreakdown, ...
   index.ts                   Public exports

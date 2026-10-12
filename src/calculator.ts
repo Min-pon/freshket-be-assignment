@@ -1,7 +1,7 @@
 import { MENU, MENU_ITEMS } from './menu.js';
 import { toBaht, toSatang } from './money.js';
 import { STORE_DISCOUNT_RULES } from './promotions.js';
-import { assertValidMemberFlag, assertValidOrder } from './validation.js';
+import { assertValidMemberFlag, parseOrder } from './validation.js';
 import type {
   AppliedDiscount,
   DiscountRule,
@@ -31,8 +31,8 @@ export class Calculator {
    * Same as `calculate`, but returns each line, subtotal and discount
    * that led to the total.
    */
-  calculateBreakdown(order: Order, { hasMemberCard = false }: CalculateOptions = {}): PriceBreakdown {
-    assertValidOrder(order);
+  calculateBreakdown(input: Order, { hasMemberCard = false }: CalculateOptions = {}): PriceBreakdown {
+    const order = parseOrder(input);
     assertValidMemberFlag(hasMemberCard);
 
     const lines = this.lineItems(order);

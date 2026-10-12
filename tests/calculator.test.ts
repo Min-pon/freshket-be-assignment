@@ -60,6 +60,46 @@ describe('Calculator', () => {
       expect(() => calculateUnchecked(order)).toThrow(InvalidOrderError);
     });
 
+    describe('only prices what was checked', () => {
+      it.each([
+        ['an inherited string quantity', Object.create({ RED: '2' })],
+        ['an inherited negative quantity', Object.create({ PINK: -3 })],
+        ['a __proto__ literal', { __proto__: { RED: 5 } }],
+        ['a Map', new Map([['RED', 1]])],
+        ['a Date', new Date()],
+        ['a class instance', new (class Order { RED = 1; })()],
+      ])('rejects %s', (_label, order) => {
+        expect(() => calculateUnchecked(order)).toThrow(InvalidOrderError);
+      });
+
+      it('accepts an object with no prototype', () => {
+        const order = Object.assign(Object.create(null), { RED: 1, ORANGE: 2 });
+        expect(calculateUnchecked(order)).toBe(278);
+      });
+
+      it('ignores own keys that are not enumerable', () => {
+        const order = Object.defineProperty({ RED: 1 }, 'ORANGE', { value: 2, enumerable: false });
+        expect(calculator.calculate(order)).toBe(50);
+      });
+
+      it('gives rules a checked copy of the order, not the input', () => {
+        const input: Order = { ORANGE: 2 };
+        let seen: unknown;
+        const spy: DiscountRule = {
+          name: 'spy',
+          discount: (context) => {
+            seen = context.order;
+            return 0;
+          },
+        };
+
+        new Calculator([spy]).calculate(input);
+
+        expect(seen).toEqual({ ORANGE: 2 });
+        expect(seen).not.toBe(input);
+      });
+    });
+
     it('rejects an item that is not on the menu', () => {
       expect(() => calculateUnchecked({ BLACK: 1 })).toThrow('Unknown menu item: BLACK');
     });
